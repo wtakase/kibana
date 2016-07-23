@@ -22,7 +22,7 @@ module.exports = function (server, headers, path) {
       // TODO(wtakase): This replaces whether it's kibana.index or not
       path = path.replace(originalIndex, replacedIndex);
       server.log(['plugin:elasticsearch', 'debug'], 'Replace kibana.index "' + originalIndex + '" with "' + replacedIndex + '"');
-      server.log(['plugin:elasticsearch', 'debug'], 'Replaced path: ' + path');
+      server.log(['plugin:elasticsearch', 'debug'], 'Replaced path: ' + path);
 
       // Check replaced kibana index exists
       checkKibanaIndex(server, replacedIndex);
