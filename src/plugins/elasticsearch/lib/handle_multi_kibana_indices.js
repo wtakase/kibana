@@ -16,7 +16,7 @@ module.exports = function (server, headers, path) {
   if (userIndexProperty) {
     // Add user property to `kibana.index`
     let originalIndex = config.get('kibana.index');
-    let replacedIndex = originalIndex + '.' + userIndexProperty;
+    let replacedIndex = originalIndex + '_' + userIndexProperty;
 
     if (path.indexOf(originalIndex) > -1 && path.indexOf(replacedIndex) === -1) {
       // TODO(wtakase): This replaces whether it's kibana.index or not
