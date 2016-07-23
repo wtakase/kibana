@@ -18,6 +18,15 @@
 # then the host you use to connect to *this* Kibana instance will be sent.
 # elasticsearch.preserveHost: true
 
+# If true, Elasticsearch plugin handles multiple `kibana.index` based on
+# header property of accessing user.
+# elasticsearch.handleMultiIndices: false
+
+# If elasticsearch.handleMultiIndices is true, elasticsearch plugin uses
+# following headers to get user property.
+# elasticsearch.proxyGroupHeader: "x-proxy-group"
+# elasticsearch.proxyUserHeader: "x-proxy-user"
+
 # Kibana uses an index in Elasticsearch to store saved searches, visualizations
 # and dashboards. It will create a new index if it doesn't already exist.
 # kibana.index: ".kibana"

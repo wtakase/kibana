@@ -90,12 +90,27 @@ define(function (require) {
           throw ABORTED;
         }
 
-        return (esPromise = es[strategy.clientMethod]({
-          timeout: esShardTimeout,
-          ignore_unavailable: true,
-          preference: sessionId,
-          body: body
-        }));
+        // NOTE(wtakase): Move index parameter to url for kibana.index replacement
+        if (strategy.clientMethod === "mget") {
+          index = _.pluck(body.docs, '_index').join(',');
+          docs = _.map(body.docs, function(doc) {
+            return _.omit(doc, '_index');
+          });
+          return (esPromise = es[strategy.clientMethod]({
+            timeout: esShardTimeout,
+            ignore_unavailable: true,
+            preference: sessionId,
+            index: index,
+            body: {docs: docs}
+          }));
+        } else {
+          return (esPromise = es[strategy.clientMethod]({
+            timeout: esShardTimeout,
+            ignore_unavailable: true,
+            preference: sessionId,
+            body: body
+          }));
+        }
       })
       .then(function (clientResp) {
         return strategy.getResponses(clientResp);
