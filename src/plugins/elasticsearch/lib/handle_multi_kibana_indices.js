@@ -25,6 +25,7 @@ module.exports = function (server, headers, path) {
       server.log(['plugin:elasticsearch', 'debug'], 'Replaced path: ' + path);
 
       // Check replaced kibana index exists
+      // TODO(wtakase): Need to add upgrading kibana.index feature
       checkKibanaIndex(server, replacedIndex);
     }
   }
