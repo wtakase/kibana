@@ -19,8 +19,8 @@ module.exports = function (server, headers, path) {
     let replacedIndex = originalIndex + '_' + userIndexProperty;
 
     if (path.indexOf(originalIndex) > -1 && path.indexOf(replacedIndex) === -1) {
-      // TODO(wtakase): This replaces whether it's kibana.index or not
-      path = path.replace(originalIndex, replacedIndex);
+      let reOriginalIndex = RegExp('(\\/)' + originalIndex + '(\\/|$)');
+      path = path.replace(reOriginalIndex, "$1" + replacedIndex + "$2");
       server.log(['plugin:elasticsearch', 'debug'], 'Replace kibana.index "' + originalIndex + '" with "' + replacedIndex + '"');
       server.log(['plugin:elasticsearch', 'debug'], 'Replaced path: ' + path);
 
