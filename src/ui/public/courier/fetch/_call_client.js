@@ -102,7 +102,33 @@ define(function (require) {
             preference: sessionId,
             index: index,
             body: {docs: docs}
-          }));
+          })).then(function (clientResp) {
+            // NOTE(wtakase): User specific kibna.index will be created at the first access,
+            //                so user may get `index_not_found_exception` error for the first time.
+            //                Currently the only solution is to wait a while and re-submit the request.
+            docs = strategy.getResponses(clientResp);
+            if (docs[0] && docs[0].error && docs[0].error.type === "index_not_found_exception") {
+              function sleep(time) {
+                var d1 = new Date().getTime();
+                var d2 = new Date().getTime();
+                while (d2 < d1 + time) {
+                  d2 = new Date().getTime();
+                }
+                return;
+              }
+              // Wait 3 seconds
+              sleep(3000);
+              return (esPromise = es[strategy.clientMethod]({
+                timeout: esShardTimeout,
+                ignore_unavailable: true,
+                preference: sessionId,
+                index: index,
+                body: {docs: docs}
+              }));
+            } else {
+              return clientResp;
+            }
+          });
         } else {
           return (esPromise = es[strategy.clientMethod]({
             timeout: esShardTimeout,

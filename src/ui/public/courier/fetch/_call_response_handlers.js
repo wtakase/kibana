@@ -36,11 +36,6 @@ define(function (require) {
         if (resp.error) {
           if (req.filterError(resp)) {
             return progress();
-          } else if (resp.error.type === "index_not_found_exception") {
-            // TODO(wtakase): User specific kibna.index will be created at the first access,
-            //                so user may get `index_not_found_exception` error for the first time.
-            //                Currently the only solution is to reload the page.
-            return req.handleFailure(new RequestFailure(null, {"error": "No index found. Please reload again."}));
           } else {
             return req.handleFailure(new RequestFailure(null, resp));
           }
