@@ -91,9 +91,10 @@ define(function (require) {
         }
 
         // NOTE(wtakase): Move index parameter to url for kibana.index replacement
-        if (strategy.clientMethod === "mget") {
-          index = _.pluck(body.docs, '_index').join(',');
-          docs = _.map(body.docs, function(doc) {
+        var indices = _.pluck(body.docs, '_index');
+        if (strategy.clientMethod === "mget" && indices.length === 1) {
+          var index = indices[0];
+          var docs = _.map(body.docs, function(doc) {
             return _.omit(doc, '_index');
           });
           return (esPromise = es[strategy.clientMethod]({
@@ -106,8 +107,8 @@ define(function (require) {
             // NOTE(wtakase): User specific kibna.index will be created at the first access,
             //                so user may get `index_not_found_exception` error for the first time.
             //                Currently the only solution is to wait a while and re-submit the request.
-            docs = strategy.getResponses(clientResp);
-            if (docs[0] && docs[0].error && docs[0].error.type === "index_not_found_exception") {
+            var respDocs = strategy.getResponses(clientResp);
+            if (respDocs[0] && respDocs[0].error && respDocs[0].error.type === "index_not_found_exception") {
               function sleep(time) {
                 var d1 = new Date().getTime();
                 var d2 = new Date().getTime();

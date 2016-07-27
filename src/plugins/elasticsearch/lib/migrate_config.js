@@ -1,10 +1,10 @@
 const upgrade = require('./upgrade_config');
 
-module.exports = function (server) {
+module.exports = function (server, index) {
   const config = server.config();
   const client = server.plugins.elasticsearch.client;
   const options =  {
-    index: config.get('kibana.index'),
+    index: index || config.get('kibana.index'),
     type: 'config',
     body: {
       size: 1000,
@@ -12,7 +12,7 @@ module.exports = function (server) {
     }
   };
 
-  return client.search(options).then(upgrade(server));
+  return client.search(options).then(upgrade(server, index));
 };
 
 

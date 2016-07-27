@@ -1,4 +1,5 @@
-const checkKibanaIndex = require('./check_kibana_index');
+const createKibanaIndex = require('./create_kibana_index');
+const migrateConfig = require('./migrate_config');
 
 module.exports = function (server, headers, path) {
 
@@ -25,8 +26,12 @@ module.exports = function (server, headers, path) {
       server.log(['plugin:elasticsearch', 'debug'], 'Replaced path: ' + path);
 
       // Check replaced kibana index exists
-      // TODO(wtakase): Need to add upgrading kibana.index feature
-      checkKibanaIndex(server, replacedIndex);
+      let client = server.plugins.elasticsearch.client;
+      client.indices.exists({index: replacedIndex}).then(function (exists) {
+        if (exists !== true) {
+          return createKibanaIndex(server, replacedIndex);
+        }
+      }).then(migrateConfig(server, replacedIndex));
     }
   }
 

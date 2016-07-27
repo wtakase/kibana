@@ -5,7 +5,7 @@ const format = require('util').format;
 
 const utils = require('requirefrom')('src/utils');
 
-module.exports = function (server) {
+module.exports = function (server, index) {
   const MAX_INTEGER = Math.pow(2, 53) - 1;
 
   const client = server.plugins.elasticsearch.client;
@@ -17,7 +17,7 @@ module.exports = function (server) {
     // Check to see if there are any doc. If not then we set the build number and id
     if (response.hits.hits.length === 0) {
       return client.create({
-        index: config.get('kibana.index'),
+        index: index || config.get('kibana.index'),
         type: 'config',
         body: { buildNum: config.get('pkg.buildNum') },
         id: config.get('pkg.version')
@@ -47,7 +47,7 @@ module.exports = function (server) {
     });
 
     return client.create({
-      index: config.get('kibana.index'),
+      index: index || config.get('kibana.index'),
       type: 'config',
       body: body._source,
       id: config.get('pkg.version')
