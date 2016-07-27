@@ -30,8 +30,11 @@ module.exports = function (server, headers, path) {
       client.indices.exists({index: replacedIndex}).then(function (exists) {
         if (exists !== true) {
           return createKibanaIndex(server, replacedIndex);
+        } else {
+          // Ignore 409 error: 'document_already_exists_exception'
+          return migrateConfig(server, replacedIndex, [409]);
         }
-      }).then(migrateConfig(server, replacedIndex));
+      });
     }
   }
 

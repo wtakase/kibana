@@ -69,7 +69,7 @@ module.exports = function (plugin, server) {
     .then(function (health) {
       if (health === NO_INDEX) {
         plugin.status.yellow('No existing Kibana index found');
-        return createKibanaIndex(server);
+        return createKibanaIndex(server, config.get('kibana.index'));
       }
 
       if (health === INITIALIZING) {
@@ -86,7 +86,7 @@ module.exports = function (plugin, server) {
     return waitForPong()
     .then(_.partial(checkEsVersion, server))
     .then(waitForShards)
-    .then(_.partial(migrateConfig, server))
+    .then(_.partial(migrateConfig, server, config.get('kibana.index')))
     .catch(err => plugin.status.red(err));
   }
 
