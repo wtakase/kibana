@@ -7,7 +7,7 @@ module.exports = function mapUri(server, prefix) {
     let path = request.path.replace('/elasticsearch', '');
 
     if (config.get('elasticsearch.handleMultiIndices')) {
-      path = handleMultiKibanaIndices(server, request.headers, path);
+      path = handleMultiKibanaIndices(server, request, path);
     }
 
     let url = config.get('elasticsearch.url');

@@ -1,23 +1,26 @@
 const createKibanaIndex = require('./create_kibana_index');
 const migrateConfig = require('./migrate_config');
 
-module.exports = function (server, headers, path) {
+module.exports = function (server, req, path) {
 
+  let headers = req.headers;
   let config = server.config();
 
-  let userIndexProperty = '';
-
-  // Group property is preferred
-  if (config.get('elasticsearch.proxyGroupHeader') in headers) {
-    userIndexProperty = headers[config.get('elasticsearch.proxyGroupHeader')];
-  } else if (config.get('elasticsearch.proxyUserHeader') in headers) {
-    userIndexProperty = headers[config.get('elasticsearch.proxyUserHeader')];
+  let replacedIndex = '';
+  let remoteUser = '';
+  if (config.get('elasticsearch.proxyUserHeader') in headers) {
+    remoteUser = headers[config.get('elasticsearch.proxyUserHeader')];
+    try {
+      let remoteUserSession = req.yar.get(remoteUser);
+      replacedIndex = remoteUserSession.key;
+    } catch (err) {
+      replacedIndex = config.get('kibana.index') + '_' + remoteUser;
+      req.yar.set(remoteUser, { key: replacedIndex });
+    }
   }
 
-  if (userIndexProperty) {
-    // Add user property to `kibana.index`
+  if (replacedIndex) {
     let originalIndex = config.get('kibana.index');
-    let replacedIndex = originalIndex + '_' + userIndexProperty;
 
     if (path.indexOf(originalIndex) > -1 && path.indexOf(replacedIndex) === -1) {
       let reOriginalIndex = RegExp('(\\/)' + originalIndex + '(\\/|$)');

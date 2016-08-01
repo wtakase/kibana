@@ -29,7 +29,6 @@ module.exports = function ({ Plugin }) {
           key: string()
         }).default(),
         handleMultiIndices: boolean().default(false),
-        proxyGroupHeader: string().default('x-proxy-group'),
         proxyUserHeader: string().default('x-proxy-user'),
         apiVersion: string().default('2.0'),
         engineVersion: string().valid('^2.3.0').default('^2.3.0')
