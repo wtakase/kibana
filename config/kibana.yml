@@ -86,10 +86,10 @@
 # Set this to true to log all events, including system usage information and all requests.
 # logging.verbose: false
 
-# For kibana-index-selection plugin
-# kibana_index_selection.session.secretkey: the-password-must-be-at-least-32-characters-long
-# kibana_index_selection.session.timeout: 3600000
-# kibana_index_selection.ldap.url: ldap://ldap.example.com:389
-# kibana_index_selection.ldap.userbase: ou=People,dc=example,dc=com
-# kibana_index_selection.ldap.rolebase: ou=Groups,dc=example,dc=com
-# kibana_index_selection.ldap.rolename_attribute: cn
+# For multi-kibana-index plugin
+# multi_kibana_index.session.secretkey: the-password-must-be-at-least-32-characters-long
+# multi_kibana_index.session.timeout: 3600000
+# multi_kibana_index.ldap.url: ldap://ldap.example.com:389
+# multi_kibana_index.ldap.userbase: ou=People,dc=example,dc=com
+# multi_kibana_index.ldap.rolebase: ou=Groups,dc=example,dc=com
+# multi_kibana_index.ldap.rolename_attribute: cn

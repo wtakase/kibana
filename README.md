@@ -8,9 +8,9 @@ Kibana is an open source ([Apache Licensed](https://github.com/elastic/kibana/bl
 
 - Elasticsearch version 2.3.0 or later
 - This Kibana
-- [kibaha.index selection](https://github.com/wtakase/kibana-index-selection)
+- [Multi kibaha.index](https://github.com/wtakase/multi-kibana-index)
 - Reverse proxy server like Apache HTTPD which authenticates a user and sends the username via request header
-- LDAP server for kibana.index selection plugin
+- LDAP server for Multi kibana.index plugin
 
 
 ## Installation
@@ -28,13 +28,13 @@ Kibana is an open source ([Apache Licensed](https://github.com/elastic/kibana/bl
 
 ```bash
 elasticsearch.handleMultiIndices: true
-elasticsearch.proxyUserHeader: "x-proxy-user"
-kibana_index_selection.session.secretkey: the-password-must-be-at-least-32-characters-long
-kibana_index_selection.session.timeout: 3600000
-kibana_index_selection.ldap.url: ldap://ldap.example.com:389
-kibana_index_selection.ldap.userbase: ou=People,dc=example,dc=com
-kibana_index_selection.ldap.rolebase: ou=Groups,dc=example,dc=com
-kibana_index_selection.ldap.rolename_attribute: cn
+elasticsearch.proxyUserHeader: x-proxy-user
+multi_kibana_index.session.secretkey: the-password-must-be-at-least-32-characters-long
+multi_kibana_index.session.timeout: 3600000
+multi_kibana_index.ldap.url: ldap://ldap.example.com:389
+multi_kibana_index.ldap.userbase: ou=People,dc=example,dc=com
+multi_kibana_index.ldap.rolebase: ou=Groups,dc=example,dc=com
+multi_kibana_index.ldap.rolename_attribute: cn
 ```
 
 ## Upgrade from previous version
