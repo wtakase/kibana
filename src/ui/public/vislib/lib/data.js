@@ -21,48 +21,14 @@ export default function DataFactory(Private) {
    * @param attr {Object|*} Visualization options
    */
   class Data {
-    constructor(data, attr, uiState) {
+    constructor(data, uiState) {
       this.uiState = uiState;
-
-      const self = this;
-      let offset;
-
-      if (attr.mode === 'stacked') {
-        offset = 'zero';
-      } else if (attr.mode === 'percentage') {
-        offset = 'expand';
-      } else if (attr.mode === 'grouped') {
-        offset = 'group';
-      } else {
-        offset = attr.mode;
-      }
-
       this.data = data;
       this.type = this.getDataType();
 
       this.labels = this._getLabels(this.data);
       this.color = this.labels ? color(this.labels, uiState.get('vis.colors')) : undefined;
       this._normalizeOrdered();
-
-      this._attr = _.defaults(attr || {}, {
-        stack: d3.layout.stack()
-        .x(function (d) {
-          return d.x;
-        })
-        .y(function (d) {
-          if (offset === 'expand') {
-            return Math.abs(d.y);
-          }
-          return d.y;
-        })
-        .offset(offset || 'zero')
-      });
-
-      if (attr.mode === 'stacked' && attr.type === 'histogram') {
-        this._attr.stack.out(function (d, y0, y) {
-          return self._stackNegAndPosVals(d, y0, y);
-        });
-      }
     }
 
     _updateData() {
@@ -91,124 +57,6 @@ export default function DataFactory(Private) {
         return getLabels(data);
       }
       return this.pieNames();
-    };
-
-    /**
-     * Returns true for positive numbers
-     */
-    _isPositive(num) {
-      return num >= 0;
-    };
-
-    /**
-     * Returns true for negative numbers
-     */
-    _isNegative(num) {
-      return num < 0;
-    };
-
-    /**
-     * Adds two input values
-     */
-    _addVals(a, b) {
-      return a + b;
-    };
-
-    /**
-     * Returns the results of the addition of numbers in a filtered array.
-     */
-    _sumYs(arr, callback) {
-      const filteredArray = arr.filter(callback);
-
-      return (filteredArray.length) ? filteredArray.reduce(this._addVals) : 0;
-    };
-
-    /**
-     * Calculates the d.y0 value for stacked data in D3.
-     */
-    _calcYZero(y, arr) {
-      if (y >= 0) return this._sumYs(arr, this._isPositive);
-      return this._sumYs(arr, this._isNegative);
-    };
-
-    /**
-     *
-     */
-    _getCounts(i, j) {
-      const data = this.chartData();
-      const dataLengths = {};
-
-      dataLengths.charts = data.length;
-      dataLengths.stacks = dataLengths.charts ? data[i].series.length : 0;
-      dataLengths.values = dataLengths.stacks ? data[i].series[j].values.length : 0;
-
-      return dataLengths;
-    };
-
-    /**
-     *
-     */
-    _createCache() {
-      const cache = {
-        index: {
-          chart: 0,
-          stack: 0,
-          value: 0
-        },
-        yValsArr: []
-      };
-
-      cache.count = this._getCounts(cache.index.chart, cache.index.stack);
-
-      return cache;
-    };
-
-    /**
-     * Stacking function passed to the D3 Stack Layout `.out` API.
-     * See: https://github.com/mbostock/d3/wiki/Stack-Layout
-     * It is responsible for calculating the correct d.y0 value for
-     * mixed datasets containing both positive and negative values.
-     */
-    _stackNegAndPosVals(d, y0, y) {
-      const data = this.chartData();
-
-      // Storing counters and data characteristics needed to stack values properly
-      if (!this._cache) {
-        this._cache = this._createCache();
-      }
-
-      d.y0 = this._calcYZero(y, this._cache.yValsArr);
-      ++this._cache.index.stack;
-
-
-      // last stack, or last value, reset the stack count and y value array
-      const lastStack = (this._cache.index.stack >= this._cache.count.stacks);
-      if (lastStack) {
-        this._cache.index.stack = 0;
-        ++this._cache.index.value;
-        this._cache.yValsArr = [];
-        // still building the stack collection, push v value to array
-      } else if (y !== 0) {
-        this._cache.yValsArr.push(y);
-      }
-
-      // last value, prepare for the next chart, if one exists
-      const lastValue = (this._cache.index.value >= this._cache.count.values);
-      if (lastValue) {
-        this._cache.index.value = 0;
-        ++this._cache.index.chart;
-
-        // no more charts, reset the queue and finish
-        if (this._cache.index.chart >= this._cache.count.charts) {
-          this._cache = this._createCache();
-          return;
-        }
-
-        // get stack and value count for next chart
-        const chartSeries = data[this._cache.index.chart].series;
-        this._cache.count.stacks = chartSeries.length;
-        this._cache.count.values = chartSeries.length ? chartSeries[this._cache.index.stack].values.length : 0;
-      }
     };
 
     getDataType() {
@@ -342,25 +190,6 @@ export default function DataFactory(Private) {
     };
 
     /**
-     * Determines whether histogram charts should be stacked
-     * TODO: need to make this more generic
-     *
-     * @method shouldBeStacked
-     * @returns {boolean}
-     */
-    shouldBeStacked() {
-      const isHistogram = (this._attr.type === 'histogram');
-      const isArea = (this._attr.type === 'area');
-      const isOverlapping = (this._attr.mode === 'overlap');
-      const grouped = (this._attr.mode === 'grouped');
-
-      const stackedHisto = isHistogram && !grouped;
-      const stackedArea = isArea && !isOverlapping;
-
-      return stackedHisto || stackedArea;
-    };
-
-    /**
      * Validates that the Y axis min value defined by user input
      * is a number.
      *
@@ -372,135 +201,6 @@ export default function DataFactory(Private) {
         throw new Error('validateUserDefinedYMin expects a number');
       }
       return val;
-    };
-
-    /**
-     * Calculates the lowest Y value across all charts, taking
-     * stacking into consideration.
-     *
-     * @method getYMin
-     * @param {function} [getValue] - optional getter that will receive a
-     *                              point and should return the value that should
-     *                              be considered
-     * @returns {Number} Min y axis value
-     */
-    getYMin(getValue) {
-      const self = this;
-
-      if (this._attr.mode === 'percentage' || this._attr.mode === 'wiggle' ||
-        this._attr.mode === 'silhouette') {
-        return 0;
-      }
-
-      const flat = this.flatten();
-      // if there is only one data point and its less than zero,
-      // return 0 as the yMax value.
-      if (!flat.length || flat.length === 1 && flat[0].y > 0) {
-        return 0;
-      }
-
-      let min = Infinity;
-
-      // for each object in the dataArray,
-      // push the calculated y value to the initialized array (arr)
-      _.each(this.chartData(), function (chart) {
-        const calculatedMin = self._getYExtent(chart, 'min', getValue);
-        if (!_.isUndefined(calculatedMin)) {
-          min = Math.min(min, calculatedMin);
-        }
-      });
-
-      return min;
-    };
-
-    /**
-     * Calculates the highest Y value across all charts, taking
-     * stacking into consideration.
-     *
-     * @method getYMax
-     * @param {function} [getValue] - optional getter that will receive a
-     *                              point and should return the value that should
-     *                              be considered
-     * @returns {Number} Max y axis value
-     */
-    getYMax(getValue) {
-      const self = this;
-
-      if (self._attr.mode === 'percentage') {
-        return 1;
-      }
-
-      const flat = this.flatten();
-      // if there is only one data point and its less than zero,
-      // return 0 as the yMax value.
-      if (!flat.length || flat.length === 1 && flat[0].y < 0) {
-        return 0;
-      }
-
-      let max = -Infinity;
-
-      // for each object in the dataArray,
-      // push the calculated y value to the initialized array (arr)
-      _.each(this.chartData(), function (chart) {
-        const calculatedMax = self._getYExtent(chart, 'max', getValue);
-        if (!_.isUndefined(calculatedMax)) {
-          max = Math.max(max, calculatedMax);
-        }
-      });
-
-      return max;
-    };
-
-    /**
-     * Calculates the stacked values for each data object
-     *
-     * @method stackData
-     * @param series {Array} Array of data objects
-     * @returns {*} Array of data objects with x, y, y0 keys
-     */
-    stackData(series) {
-      // Should not stack values on line chart
-      if (this._attr.type === 'line') return series;
-      return this._attr.stack(series);
-    };
-
-    /**
-     * Returns the max Y axis value for a `series` array based on
-     * a specified callback function (calculation).
-     * @param {function} [getValue] - Optional getter that will be used to read
-     *                              values from points when calculating the extent.
-     *                              default is either this._getYStack or this.getY
-     *                              based on this.shouldBeStacked().
-     */
-    _getYExtent(chart, extent, getValue) {
-      if (this.shouldBeStacked()) {
-        this.stackData(_.pluck(chart.series, 'values'));
-        getValue = getValue || this._getYStack;
-      } else {
-        getValue = getValue || this._getY;
-      }
-
-      const points = chart.series
-      .reduce(function (points, series) {
-        return points.concat(series.values);
-      }, [])
-      .map(getValue);
-
-      return d3[extent](points);
-    };
-
-    /**
-     * Calculates the y stack value for each data object
-     */
-    _getYStack(d) {
-      return d.y0 + d.y;
-    };
-
-    /**
-     * Calculates the Y max value
-     */
-    _getY(d) {
-      return d.y;
     };
 
     /**

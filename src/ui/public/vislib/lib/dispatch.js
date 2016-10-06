@@ -33,14 +33,14 @@ export default function DispatchClass(Private, config) {
       const datum = d._input || d;
       const data = d3.event.target.nearestViewportElement ?
         d3.event.target.nearestViewportElement.__data__ : d3.event.target.__data__;
-      const label = d.label ? d.label : d.name;
+      const label = d.label ? d.label : (d.series || 'Count');
       const isSeries = !!(data && data.series);
       const isSlices = !!(data && data.slices);
       const series = isSeries ? data.series : undefined;
       const slices = isSlices ? data.slices : undefined;
       const handler = this.handler;
       const color = _.get(handler, 'data.color');
-      const isPercentage = (handler && handler._attr.mode === 'percentage');
+      const isPercentage = (handler && handler.visConfig.mode === 'percentage');
 
       const eventData = {
         value: d.y,
@@ -51,7 +51,7 @@ export default function DispatchClass(Private, config) {
         pointIndex: i,
         series: series,
         slices: slices,
-        config: handler && handler._attr,
+        config: handler && handler.visConfig,
         data: data,
         e: d3.event,
         handler: handler
@@ -59,7 +59,7 @@ export default function DispatchClass(Private, config) {
 
       if (isSeries) {
         // Find object with the actual d value and add it to the point object
-        const object = _.find(series, {'label': d.label});
+        const object = _.find(series, {'label': label});
         eventData.value = +object.values[i].y;
 
         if (isPercentage) {
@@ -164,7 +164,7 @@ export default function DispatchClass(Private, config) {
       const xAxis = this.handler.categoryAxes[0];
       const xScale = xAxis.getScale();
       // Don't allow brushing for time based charts from non-time-based indices
-      const hasTimeField = this.handler.vis._attr.hasTimeField;
+      const hasTimeField = this.handler.visConfig.get('hasTimeField');
 
       return Boolean(hasTimeField && xAxis.ordered && xScale && _.isFunction(xScale.invert));
     };
@@ -258,9 +258,9 @@ export default function DispatchClass(Private, config) {
      */
     createBrush(xScale, svg) {
       const self = this;
-      const attr = self.handler._attr;
-      const height = attr.height;
-      const margin = attr.margin;
+      const visConfig = self.handler.visConfig;
+      const height = svg.node().getBBox().height;
+      const margin = visConfig.get('style.margin');
 
       // Brush scale
       const brush = d3.svg.brush()
@@ -280,7 +280,7 @@ export default function DispatchClass(Private, config) {
 
           return self.emit('brush', {
             range: range,
-            config: attr,
+            config: visConfig,
             e: d3.event,
             data: data
           });

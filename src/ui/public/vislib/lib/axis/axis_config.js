@@ -14,7 +14,8 @@ export default function AxisConfigFactory() {
       setYExtents: null,
       defaultYExtents: null,
       min: null,
-      max: null
+      max: null,
+      mode: 'normal' // [percentage, normal, wiggle, silluete]
     },
     style: {
       color: '#ddd',
@@ -53,23 +54,23 @@ export default function AxisConfigFactory() {
   };
 
   class AxisConfig {
-    constructor(config) {
-      const typeDefaults = config.type === 'category' ? categoryDefaults : {};
-      this._values = _.defaultsDeep({}, config, typeDefaults, defaults);
+    constructor(chartConfig, axisConfigArgs) {
+      const typeDefaults = axisConfigArgs.type === 'category' ? categoryDefaults : {};
+      this._values = _.defaultsDeep({}, axisConfigArgs, typeDefaults, defaults);
 
       this._values.elSelector = this._values.elSelector.replace('{pos}', this._values.position);
-      this._values.rootEl = this._values.vis.el;
+      this._values.rootEl = chartConfig.get('el');
 
-      this.data = this._values.data;
+      this.data = chartConfig.data;
       if (this._values.type === 'category') {
         this.values = this.data.xValues();
         this.ordered = this.data.get('ordered');
       }
 
       if (this._values.type === 'value') {
-        const isWiggleOrSilluete = this._values.vis._attr.mode === 'wiggle' || this._values.vis._attr.mode === 'silluete';
+        const isWiggleOrSilluete = chartConfig.get('mode') === 'wiggle' || chartConfig.get('mode') === 'silluete';
         // if show was not explicitly set and wiggle or silluete option was checked
-        if (!config.show && isWiggleOrSilluete) {
+        if (!axisConfigArgs.show && isWiggleOrSilluete) {
           this._values.show = false;
         }
 
@@ -86,9 +87,25 @@ export default function AxisConfigFactory() {
       // horizontal axis with ordinal scale should have labels rotated (so we can fit more)
       // unless explicitly overriden by user
       if (this.isHorizontal() && this.isOrdinal()) {
-        this._values.labels.filter = config.labels.filter || false;
-        this._values.labels.rotate = config.labels.rotate || 70;
+        this._values.labels.filter = _.get(axisConfigArgs, 'labels.filter', false);
+        this._values.labels.rotate = _.get(axisConfigArgs, 'labels.rotate', 70);
       }
+
+      let offset;
+      switch (this.get('scale.mode')) {
+        case 'normal':
+          offset = 'zero';
+          break;
+        case 'percentage':
+          offset = 'expand';
+          break;
+        case 'grouped':
+          offset = 'group';
+          break;
+        default:
+          offset = this.get('scale.mode');
+      }
+      this.set('scale.offset', _.get(axisConfigArgs, 'scale.offset', offset));
     };
 
     get(property, defaults = null) {
@@ -117,15 +134,15 @@ export default function AxisConfigFactory() {
     };
 
     isPercentage() {
-      return (this._values.vis._attr.mode === 'percentage');
+      return this._values.scale.mode === 'percentage';
     };
 
     isUserDefined() {
-      return (this._values.scale.setYExtents);
+      return this._values.scale.setYExtents;
     };
 
     isYExtents() {
-      return (this._values.scale.defaultYExtents);
+      return this._values.scale.defaultYExtents;
     };
 
     isLogScale() {

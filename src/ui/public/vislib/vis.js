@@ -5,15 +5,14 @@ import errors from 'ui/errors';
 import 'ui/vislib/styles/main.less';
 import VislibLibResizeCheckerProvider from 'ui/vislib/lib/resize_checker';
 import EventsProvider from 'ui/events';
-import VislibLibHandlerHandlerTypesProvider from 'ui/vislib/lib/handler/handler_types';
-import VislibVisualizationsVisTypesProvider from 'ui/vislib/visualizations/vis_types';
+import VisConifgProvider from 'ui/vislib/lib/vis_config';
+import VisHandlerProvider from 'ui/vislib/lib/handler';
+
 export default function VisFactory(Private) {
-
-
   const ResizeChecker = Private(VislibLibResizeCheckerProvider);
   const Events = Private(EventsProvider);
-  const handlerTypes = Private(VislibLibHandlerHandlerTypesProvider);
-  const chartTypes = Private(VislibVisualizationsVisTypesProvider);
+  const VisConfig = Private(VisConifgProvider);
+  const Handler = Private(VisHandlerProvider);
 
   /**
    * Creates the visualizations.
@@ -24,14 +23,12 @@ export default function VisFactory(Private) {
    * @param config {Object} Parameters that define the chart type and chart options
    */
   class Vis extends Events {
-    constructor($el, config) {
+    constructor($el, visConfigArgs) {
       super(arguments);
       this.el = $el.get ? $el.get(0) : $el;
       this.binder = new Binder();
-      this.ChartClass = chartTypes[config.type];
-      this._attr = _.defaults({}, config || {}, {
-        legendOpen: true
-      });
+      this.visConfigArgs = visConfigArgs;
+      this.visConfigArgs.el = this.el;
 
       // bind the resize function so it can be used as an event handler
       this.resize = _.bind(this.resize, this);
@@ -39,6 +36,9 @@ export default function VisFactory(Private) {
       this.binder.on(this.resizeChecker, 'resize', this.resize);
     }
 
+    hasLegend() {
+      return this.visConfigArgs.addLegend;
+    }
     /**
      * Renders the visualization
      *
@@ -46,8 +46,6 @@ export default function VisFactory(Private) {
      * @param data {Object} Elasticsearch query results
      */
     render(data, uiState) {
-      const chartType = this._attr.type;
-
       if (!data) {
         throw new Error('No valid data!');
       }
@@ -64,7 +62,8 @@ export default function VisFactory(Private) {
         uiState.on('change', this._uiStateChangeHandler = () => this.render(this.data, this.uiState));
       }
 
-      this.handler = handlerTypes[chartType](this) || handlerTypes.column(this);
+      this.visConfig = new VisConfig(this.visConfigArgs, this.data, this.uiState);
+      this.handler = new Handler(this, this.visConfig);
       this._runWithoutResizeChecker('render');
     };
 
@@ -135,7 +134,7 @@ export default function VisFactory(Private) {
      * @param val {*} Value to which the attribute name is set
      */
     set(name, val) {
-      this._attr[name] = val;
+      this.visConfigArgs[name] = val;
       this.render(this.data, this.uiState);
     };
 
@@ -147,7 +146,7 @@ export default function VisFactory(Private) {
      * @returns {*} The value of the attribute name
      */
     get(name) {
-      return this._attr[name];
+      return this.visConfig.get(name);
     };
 
     /**

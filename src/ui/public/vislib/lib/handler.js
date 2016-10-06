@@ -2,12 +2,18 @@ import d3 from 'd3';
 import _ from 'lodash';
 import errors from 'ui/errors';
 import Binder from 'ui/binder';
-import VislibLibDataProvider from 'ui/vislib/lib/data';
 import VislibLibLayoutLayoutProvider from 'ui/vislib/lib/layout/layout';
-export default function HandlerBaseClass(Private) {
+import VislibLibChartTitleProvider from 'ui/vislib/lib/chart_title';
+import VislibLibAlertsProvider from 'ui/vislib/lib/alerts';
+import VislibAxisProvider from 'ui/vislib/lib/axis';
+import VislibVisualizationsVisTypesProvider from 'ui/vislib/visualizations/vis_types';
 
-  const Data = Private(VislibLibDataProvider);
+export default function HandlerBaseClass(Private) {
+  const chartTypes = Private(VislibVisualizationsVisTypesProvider);
   const Layout = Private(VislibLibLayoutLayoutProvider);
+  const ChartTitle = Private(VislibLibChartTitleProvider);
+  const Alerts = Private(VislibLibAlertsProvider);
+  const Axis = Private(VislibAxisProvider);
 
   /**
    * Handles building all the components of the visualization
@@ -19,29 +25,24 @@ export default function HandlerBaseClass(Private) {
    * create the visualization
    */
   class Handler {
-    constructor(vis, opts) {
-
-      this.data = opts.data || new Data(vis.data, vis._attr, vis.uiState);
-      this.vis = vis;
-      this.el = vis.el;
-      this.ChartClass = vis.ChartClass;
+    constructor(vis, visConfig) {
+      this.el = visConfig.get('el');
+      this.ChartClass = chartTypes[visConfig.get('type')];
       this.charts = [];
 
-      this._attr = _.defaults(vis._attr || {}, {
-        'margin': {top: 10, right: 3, bottom: 5, left: 3}
-      });
+      this.vis = vis;
+      this.visConfig = visConfig;
+      this.data = visConfig.data;
 
-      this.categoryAxes = opts.categoryAxes;
-      this.valueAxes = opts.valueAxes;
-      this.chartTitle = opts.chartTitle;
-      this.axisTitle = opts.axisTitle;
-      this.alerts = opts.alerts;
+      this.categoryAxes = visConfig.get('categoryAxes').map(axisArgs => new Axis(visConfig, axisArgs));
+      this.valueAxes = visConfig.get('valueAxes').map(axisArgs => new Axis(visConfig, axisArgs));
+      this.chartTitle = new ChartTitle(visConfig);
+      this.alerts = new Alerts(this, visConfig.get('alerts'));
 
-      this.layout = new Layout(vis.el, vis.data, vis._attr.type, opts);
+      this.layout = new Layout(visConfig);
       this.binder = new Binder();
       this.renderArray = _.filter([
         this.layout,
-        this.axisTitle,
         this.chartTitle,
         this.alerts
       ].concat(_.values(this.categoryAxes))
