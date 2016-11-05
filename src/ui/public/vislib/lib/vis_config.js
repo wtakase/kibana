@@ -1,11 +1,12 @@
 import _ from 'lodash';
 import VisTypesProvider from 'ui/vislib/lib/types';
 import VislibLibDataProvider from 'ui/vislib/lib/data';
-
+import VislibComponentsZeroInjectionInjectZerosProvider from 'ui/vislib/components/zero_injection/inject_zeros';
 
 export default function VisConfigFactory(Private) {
 
   const Data = Private(VislibLibDataProvider);
+  const injectZeros = Private(VislibComponentsZeroInjectionInjectZerosProvider);
   const visTypes = Private(VisTypesProvider);
   const defaults = {
     style: {
@@ -19,7 +20,11 @@ export default function VisConfigFactory(Private) {
 
   class VisConfig {
     constructor(visConfigArgs, data, uiState) {
-      this.data = new Data(data, uiState);
+      if (visConfigArgs.zeroFill || ['area', 'histogram'].includes(visConfigArgs.type)) {
+        this.data = new Data(injectZeros(data), uiState);
+      } else {
+        this.data = new Data(data, uiState);
+      }
 
       const typeDefaults = visTypes[visConfigArgs.type](visConfigArgs, this.data);
       this._values = _.defaultsDeep({}, typeDefaults, defaults);

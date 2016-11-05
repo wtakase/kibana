@@ -259,41 +259,36 @@ export default function DispatchClass(Private, config) {
     createBrush(xScale, svg) {
       const self = this;
       const visConfig = self.handler.visConfig;
-      const {width, height} = svg.node().getBBox();
-      const isHorizontal = self.handler.categoryAxes[0].axisConfig.isHorizontal();
+      const height = svg.node().getBBox().height;
+      const margin = visConfig.get('style.margin');
 
       // Brush scale
-      const brush = d3.svg.brush();
-      if (isHorizontal) {
-        brush.x(xScale);
-      } else {
-        brush.y(xScale);
-      }
+      const brush = d3.svg.brush()
+        .x(xScale)
+        .on('brushend', function brushEnd() {
 
-      brush.on('brushend', function brushEnd() {
+          // Assumes data is selected at the chart level
+          // In this case, the number of data objects should always be 1
+          const data = d3.select(this).data()[0];
+          const isTimeSeries = (data.ordered && data.ordered.date);
 
-        // Assumes data is selected at the chart level
-        // In this case, the number of data objects should always be 1
-        const data = d3.select(this).data()[0];
-        const isTimeSeries = (data.ordered && data.ordered.date);
+          // Allows for brushing on d3.scale.ordinal()
+          const selected = xScale.domain().filter(function (d) {
+            return (brush.extent()[0] <= xScale(d)) && (xScale(d) <= brush.extent()[1]);
+          });
+          const range = isTimeSeries ? brush.extent() : selected;
 
-        // Allows for brushing on d3.scale.ordinal()
-        const selected = xScale.domain().filter(function (d) {
-          return (brush.extent()[0] <= xScale(d)) && (xScale(d) <= brush.extent()[1]);
+          return self.emit('brush', {
+            range: range,
+            config: visConfig,
+            e: d3.event,
+            data: data
+          });
         });
-        const range = isTimeSeries ? brush.extent() : selected;
-
-        return self.emit('brush', {
-          range: range,
-          config: visConfig,
-          e: d3.event,
-          data: data
-        });
-      });
 
       // if `addBrushing` is true, add brush canvas
       if (self.listenerCount('brush')) {
-        const rect = svg.insert('g', 'g')
+        svg.insert('g', 'g')
           .attr('class', 'brush')
           .call(brush)
           .call(function (brushG) {
@@ -304,13 +299,8 @@ export default function DispatchClass(Private, config) {
               if (validBrushClick(d3.event)) brushHandler.apply(this, arguments);
             });
           })
-          .selectAll('rect');
-
-        if (isHorizontal) {
-          rect.attr('height', height);
-        } else {
-          rect.attr('width', width);
-        }
+          .selectAll('rect')
+          .attr('height', height - margin.top - margin.bottom);
 
         return brush;
       }

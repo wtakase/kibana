@@ -1,8 +1,10 @@
 import _ from 'lodash';
+import VislibComponentsZeroInjectionOrderedXKeysProvider from 'ui/vislib/components/zero_injection/ordered_x_keys';
 import VislibComponentsZeroInjectionZeroFilledArrayProvider from 'ui/vislib/components/zero_injection/zero_filled_array';
 import VislibComponentsZeroInjectionZeroFillDataArrayProvider from 'ui/vislib/components/zero_injection/zero_fill_data_array';
 export default function ZeroInjectionUtilService(Private) {
 
+  const orderXValues = Private(VislibComponentsZeroInjectionOrderedXKeysProvider);
   const createZeroFilledArray = Private(VislibComponentsZeroInjectionZeroFilledArrayProvider);
   const zeroFillDataArray = Private(VislibComponentsZeroInjectionZeroFillDataArrayProvider);
 
@@ -17,12 +19,30 @@ export default function ZeroInjectionUtilService(Private) {
    * and injects zeros where needed.
    */
 
-  return function (obj) {
-    const keys = _(obj).map('values').flatten().map('x').uniq().sort().value();//orderXValues(obj);
+  function getDataArray(obj) {
+    if (obj.rows) {
+      return obj.rows;
+    } else if (obj.columns) {
+      return obj.columns;
+    } else if (obj.series) {
+      return [obj];
+    }
+  }
 
-    obj.forEach(function (series) {
-      const zeroArray = createZeroFilledArray(keys);
-      series.values = zeroFillDataArray(zeroArray, series.values);
+  return function (obj) {
+    if (!_.isObject(obj) || !obj.rows && !obj.columns && !obj.series) {
+      throw new TypeError('ZeroInjectionUtilService expects an object with a series, rows, or columns key');
+    }
+
+    const keys = orderXValues(obj);
+    const arr = getDataArray(obj);
+
+    arr.forEach(function (object) {
+      object.series.forEach(function (series) {
+        const zeroArray = createZeroFilledArray(keys);
+
+        series.values = zeroFillDataArray(zeroArray, series.values);
+      });
     });
 
     return obj;
