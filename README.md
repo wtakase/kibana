@@ -5,15 +5,33 @@ Kibana is an open source ([Apache Licensed](https://github.com/elastic/kibana/bl
 ## Requirements
 
 - Elasticsearch version 2.4.0 or later
-- Kibana binary package
+- This Kibana
+- [Multi kibaha.index](https://github.com/wtakase/multi-kibana-index)
+- Reverse proxy server like Apache HTTPD which authenticates a user and sends the username via request header
+- LDAP server for Multi kibana.index plugin
 
 ## Installation
 
-* Download: [http://www.elastic.co/downloads/kibana](http://www.elastic.co/downloads/kibana)
-* Extract the files
-* Run `bin/kibana` on unix, or `bin\kibana.bat` on Windows.
+* Clone: [https://github.com/wtakase/kibana](https://github.com/wtakase/kibana)
+* Check out to `4.6-multi-kibana-index`
+* Build the kibana by reference to [https://github.com/elastic/kibana/blob/4.6/CONTRIBUTING.md](https://github.com/elastic/kibana/blob/4.6/CONTRIBUTING.md).
+* Run the built kibana
 * Visit [http://localhost:5601](http://localhost:5601)
 
+## Configuration for multiple kibana.index handling
+
+* Edit `config/kibana.yml`
+
+```bash
+elasticsearch.handleMultiIndices: true
+elasticsearch.proxyUserHeader: x-proxy-user
+multi_kibana_index.session.secretkey: the-password-must-be-at-least-32-characters-long
+multi_kibana_index.session.timeout: 3600000
+multi_kibana_index.ldap.url: ldap://ldap.example.com:389
+multi_kibana_index.ldap.userbase: ou=People,dc=example,dc=com
+multi_kibana_index.ldap.rolebase: ou=Groups,dc=example,dc=com
+multi_kibana_index.ldap.rolename_attribute: cn
+```
 
 ## Upgrade from previous version
 

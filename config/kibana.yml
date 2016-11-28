@@ -18,6 +18,14 @@
 # then the host you use to connect to *this* Kibana instance will be sent.
 # elasticsearch.preserveHost: true
 
+# If true, Elasticsearch plugin handles multiple `kibana.index` based on
+# header property of accessing user.
+# elasticsearch.handleMultiIndices: false
+
+# If elasticsearch.handleMultiIndices is true, elasticsearch plugin uses
+# following header to get user property.
+# elasticsearch.proxyUserHeader: "x-proxy-user"
+
 # Kibana uses an index in Elasticsearch to store saved searches, visualizations
 # and dashboards. It will create a new index if it doesn't already exist.
 # kibana.index: ".kibana"
@@ -81,3 +89,11 @@
 
 # Set this to true to log all events, including system usage information and all requests.
 # logging.verbose: false
+
+# For multi-kibana-index plugin
+# multi_kibana_index.session.secretkey: the-password-must-be-at-least-32-characters-long
+# multi_kibana_index.session.timeout: 3600000
+# multi_kibana_index.ldap.url: ldap://ldap.example.com:389
+# multi_kibana_index.ldap.userbase: ou=People,dc=example,dc=com
+# multi_kibana_index.ldap.rolebase: ou=Groups,dc=example,dc=com
+# multi_kibana_index.ldap.rolename_attribute: cn

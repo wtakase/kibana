@@ -90,12 +90,54 @@ define(function (require) {
           throw ABORTED;
         }
 
-        return (esPromise = es[strategy.clientMethod]({
-          timeout: esShardTimeout,
-          ignore_unavailable: true,
-          preference: sessionId,
-          body: body
-        }));
+        // NOTE(wtakase): Move index parameter to url for kibana.index replacement
+        var indices = _.pluck(body.docs, '_index');
+        if (strategy.clientMethod === "mget" && indices.length === 1) {
+          var index = indices[0];
+          var docs = _.map(body.docs, function(doc) {
+            return _.omit(doc, '_index');
+          });
+          return (esPromise = es[strategy.clientMethod]({
+            timeout: esShardTimeout,
+            ignore_unavailable: true,
+            preference: sessionId,
+            index: index,
+            body: {docs: docs}
+          })).then(function (clientResp) {
+            // NOTE(wtakase): User specific kibna.index will be created at the first access,
+            //                so user may get `index_not_found_exception` error for the first time.
+            //                Currently the only solution is to wait a while and re-submit the request.
+            var respDocs = strategy.getResponses(clientResp);
+            if (respDocs[0] && respDocs[0].error && respDocs[0].error.type === "index_not_found_exception") {
+              function sleep(time) {
+                var d1 = new Date().getTime();
+                var d2 = new Date().getTime();
+                while (d2 < d1 + time) {
+                  d2 = new Date().getTime();
+                }
+                return;
+              }
+              // Wait 3 seconds
+              sleep(3000);
+              return (esPromise = es[strategy.clientMethod]({
+                timeout: esShardTimeout,
+                ignore_unavailable: true,
+                preference: sessionId,
+                index: index,
+                body: {docs: docs}
+              }));
+            } else {
+              return clientResp;
+            }
+          });
+        } else {
+          return (esPromise = es[strategy.clientMethod]({
+            timeout: esShardTimeout,
+            ignore_unavailable: true,
+            preference: sessionId,
+            body: body
+          }));
+        }
       })
       .then(function (clientResp) {
         return strategy.getResponses(clientResp);

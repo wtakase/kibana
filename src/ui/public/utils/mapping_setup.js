@@ -32,7 +32,8 @@ define(function () {
         // limit the response to just the _source field for each index
         field: '_source'
       }).then(function (resp) {
-        return _.keys(resp[indexName].mappings);
+        // NOTE(wtakase): This enables to support multiple kibana.index
+        return _.keys(_.find(resp, function(index) { return _.startsWith(index, indexName)}));
       });
     });
 
