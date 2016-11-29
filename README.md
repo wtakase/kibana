@@ -30,6 +30,7 @@ multi_kibana_index.session.timeout: 3600000
 multi_kibana_index.ldap.url: ldap://ldap.example.com:389
 multi_kibana_index.ldap.userbase: ou=People,dc=example,dc=com
 multi_kibana_index.ldap.rolebase: ou=Groups,dc=example,dc=com
+multi_kibana_index.ldap.search_filter: '(cn=*)'
 multi_kibana_index.ldap.username_attribute: cn
 multi_kibana_index.ldap.rolename_attribute: cn
 ```
