@@ -33,6 +33,7 @@ multi_kibana_index.ldap.rolebase: ou=Groups,dc=example,dc=com
 multi_kibana_index.ldap.search_filter: '(cn=*)'
 multi_kibana_index.ldap.username_attribute: cn
 multi_kibana_index.ldap.rolename_attribute: cn
+multi_kibana_index.ldap.adfs: false
 ```
 
 ## Upgrade from previous version
